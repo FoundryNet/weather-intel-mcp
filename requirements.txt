@@ -1,0 +1,4 @@
+fastmcp>=2.0
+httpx>=0.27
+# Weather is pure HTTP (Open-Meteo + NWS). x402 gating is plain Solana JSON-RPC
+# over httpx — no x402[svm]/solders extra.

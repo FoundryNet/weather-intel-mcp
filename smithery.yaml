@@ -1,0 +1,19 @@
+name: "@foundrynet/weather-intel"
+displayName: "Weather & Climate Intelligence MCP"
+description: >-
+  Weather and climate intelligence for AI agents — current weather, forecast API,
+  historical weather, climate data and normals, severe-weather alerts, agricultural
+  weather, and travel weather. Free current conditions and alerts; sub-cent
+  forecasts. Keyless sources (Open-Meteo + NWS). Part of the FoundryNet Data
+  Network. Free tier then x402 (USDC on Solana).
+startCommand:
+  type: http
+  url: "https://weather-intel-mcp-production.up.railway.app/mcp"
+  transport: streamable-http
+  configSchema:
+    type: object
+    properties:
+      api_key:
+        type: string
+        title: "Forge billing key (optional)"
+        description: "fnet_ key to bypass the per-query x402 paywall and bill to a Forge account."

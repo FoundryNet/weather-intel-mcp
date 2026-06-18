@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+.env
+.venv/
+.railway/
+.DS_Store
+.db-password
+.service-key
+.admin-token
+supabase/
+.railwayignore

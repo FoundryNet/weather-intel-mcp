@@ -1,0 +1,22 @@
+{
+  "name": "Weather & Climate Intelligence MCP",
+  "description": "Weather & climate intelligence for agents: current weather, forecast, historical weather, climate normals, severe-weather alerts, agricultural weather, and travel weather. Keyless (Open-Meteo + NWS). Part of the FoundryNet Data Network.",
+  "url": "https://github.com/FoundryNet/weather-intel-mcp",
+  "capabilities": [
+    "weather_data", "forecast", "climate_data", "historical_weather",
+    "weather_alerts", "agricultural_weather", "travel_weather"
+  ],
+  "network": "FoundryNet Data Network",
+  "see_also": {
+    "gov-contracts-mcp": "https://gov-contracts-mcp-production.up.railway.app/mcp",
+    "brand-intel-mcp": "https://brand-intel-mcp-production.up.railway.app/mcp",
+    "patent-intel-mcp": "https://patent-intel-mcp-production.up.railway.app/mcp",
+    "financial-signals-mcp": "https://financial-signals-mcp-production.up.railway.app/mcp"
+  },
+  "mint_protocol": "https://mint-mcp-production.up.railway.app/mcp",
+  "protocols": {
+    "mcp": { "endpoint": "https://weather-intel-mcp-production.up.railway.app/mcp", "transport": "streamable-http", "tools_count": 8 },
+    "x402": { "supported": true, "currency": "USDC", "network": "solana" }
+  },
+  "contact": "hello@foundrynet.io"
+}
