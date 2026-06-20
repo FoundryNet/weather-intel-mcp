@@ -1,11 +1,7 @@
 __pycache__/
 *.pyc
 .env
-.venv/
+.env.*
 .railway/
-.DS_Store
-.db-password
-.service-key
-.admin-token
-supabase/
-.railwayignore
+*.log
+logs/

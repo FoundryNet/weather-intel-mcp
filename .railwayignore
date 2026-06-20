@@ -1,0 +1,8 @@
+.service-key
+.db-password
+.admin-token
+.env
+supabase/
+__pycache__/
+*.pyc
+.git/

@@ -7,6 +7,7 @@
   weather_alerts       (free)    active NWS severe-weather alerts
   agricultural_outlook ($0.01)   GDD, frost risk, soil moisture, planting window
   travel_conditions    ($0.01)   two-location comparison + packing recs
+  daily_brief          ($5)      curated daily brief — alerts, events, metro outlook, ag
   mint_info            (free)    FoundryNet Data Network + MINT cross-promo
 """
 from . import current as current_tool
@@ -16,10 +17,11 @@ from . import normals as normals_tool
 from . import alerts as alerts_tool
 from . import agricultural as agricultural_tool
 from . import travel as travel_tool
+from . import daily_brief as daily_brief_tool
 from . import mint as mint_tool
 
 
 def register_all(mcp) -> None:
     for m in (current_tool, forecast_tool, historical_tool, normals_tool, alerts_tool,
-              agricultural_tool, travel_tool, mint_tool):
+              agricultural_tool, travel_tool, daily_brief_tool, mint_tool):
         m.register(mcp)

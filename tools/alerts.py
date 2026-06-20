@@ -11,8 +11,9 @@ def register(mcp) -> None:
         longitude: Optional[float] = None,
         radius_km: Optional[float] = None,
     ) -> dict:
-        """Active NWS severe-weather alerts (US). FREE — public safety. Query by
-        state code, by latitude+longitude (point), or with no args for nationwide.
+        """Check active severe-weather alerts from NOAA/NWS (US). FREE — public
+        safety. Query by state code, by latitude+longitude (point), or with no args
+        for nationwide weather alerts.
 
         Args:
             state: 2-letter US state code, e.g. "TX".

@@ -2,12 +2,16 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.FoundryNet/weather-intel-mcp",
   "title": "Weather & Climate Intelligence MCP",
-  "description": "Weather data, forecast API, climate data, historical weather, alerts, agricultural & travel weather.",
+  "description": "Get weather forecasts, severe-weather alerts, historical climate, and agricultural signals — keyless, from NOAA/NWS and Open-Meteo.",
   "version": "1.0.0",
+  "homepage": "https://foundrynet.io",
   "repository": {
     "url": "https://github.com/FoundryNet/weather-intel-mcp",
     "source": "github"
   },
+  "categories": ["weather", "climate", "data", "agriculture"],
+  "tags": ["weather forecast", "climate data", "NOAA", "weather alerts", "historical weather", "agricultural weather"],
+  "keywords": ["weather forecast", "climate data", "NOAA", "weather alerts", "historical weather", "agricultural weather"],
   "remotes": [
     {
       "type": "streamable-http",

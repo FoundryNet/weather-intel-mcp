@@ -14,8 +14,9 @@ def register(mcp) -> None:
         agent_id: Optional[str] = None,
         payment_tx: Optional[str] = None,
     ) -> dict:
-        """Historical daily weather for a date range — high/low/mean temperature,
-        precipitation, and max wind per day (global, from the Open-Meteo archive).
+        """Get historical weather for a location and date range from the Open-Meteo
+        archive — daily high/low/mean temperature, precipitation, and max wind per
+        day (global climate data).
 
         PAID: $0.01 USDC per query after the daily free allowance (50/day). On a
         402, pay the returned Solana memo and re-call with the SAME args plus

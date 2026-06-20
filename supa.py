@@ -41,6 +41,18 @@ async def select(table: str, params: dict) -> list:
     return r if isinstance(r, list) else []
 
 
+async def upsert(table: str, rows: list, on_conflict: str) -> dict:
+    if not configured() or not rows:
+        return {"data": []}
+    r = await request_json("POST", _url(table),
+                           headers=_headers({"Prefer": "resolution=merge-duplicates,return=minimal"}),
+                           params={"on_conflict": on_conflict},
+                           body=rows, timeout=max(config.REQUEST_TIMEOUT, 60))
+    if isinstance(r, dict) and r.get("error"):
+        return r
+    return {"data": rows}
+
+
 async def rpc(fn: str, body: dict):
     if not configured():
         return None

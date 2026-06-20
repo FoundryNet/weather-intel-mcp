@@ -13,10 +13,10 @@ def register(mcp) -> None:
         agent_id: Optional[str] = None,
         payment_tx: Optional[str] = None,
     ) -> dict:
-        """Climate normals for a location — multi-decade monthly averages (high/low/
-        mean temp, precipitation), frost probabilities, average frost dates, and
-        growing degree days. Derived from the Open-Meteo archive (set NOAA_CDO_TOKEN
-        for official 30-year NOAA normals).
+        """Get climate normals for a location — multi-decade monthly climate data
+        averages (high/low/mean temp, precipitation), frost probabilities, average
+        frost dates, and growing degree days. From the Open-Meteo archive (set
+        NOAA_CDO_TOKEN for official 30-year NOAA normals).
 
         PAID: $0.01 USDC per query after the daily free allowance (50/day). On a
         402, pay the returned Solana memo and re-call with the SAME args plus

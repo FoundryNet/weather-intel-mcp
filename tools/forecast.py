@@ -13,9 +13,9 @@ def register(mcp) -> None:
         agent_id: Optional[str] = None,
         payment_tx: Optional[str] = None,
     ) -> dict:
-        """Weather forecast — up to 16-day daily outlook (high/low, conditions,
-        precipitation probability, wind) plus the next 48 hours hourly. Cheap
-        enough to call constantly.
+        """Forecast weather for a location from Open-Meteo — up to 16-day daily
+        outlook (high/low, conditions, precipitation probability, wind) plus the
+        next 48 hours hourly. Cheap enough to call constantly.
 
         PAID: $0.005 USDC per query after a generous daily free allowance (50/day).
         On a 402, pay the returned Solana memo and re-call with the SAME args plus

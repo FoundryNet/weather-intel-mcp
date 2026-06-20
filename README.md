@@ -9,8 +9,17 @@ and travel weather. Built on free, **keyless** sources (Open-Meteo + NWS).
 > See also: **gov-contracts-mcp**, **brand-intel-mcp**, **patent-intel-mcp**,
 > **financial-signals-mcp**.
 
-Live MCP endpoint (Streamable HTTP):
-`https://weather-intel-mcp-production.up.railway.app/mcp`
+## Connect
+
+- **MCP endpoint** (Streamable HTTP): `https://weather-intel-mcp-production.up.railway.app/mcp`
+- **Registry:** `io.github.FoundryNet/weather-intel-mcp`
+- **Agent card:** `https://weather-intel-mcp-production.up.railway.app/.well-known/agent-card.json`
+
+### Claude Desktop / Cursor / Claude Code
+
+```bash
+claude mcp add --transport http weather-intel https://weather-intel-mcp-production.up.railway.app/mcp
+```
 
 ## Tools
 
@@ -41,10 +50,15 @@ nationwide alert snapshot refreshes hourly.
 
 ## Connect
 
-Smithery: `@foundrynet/weather-intel` · MCP registry: `io.github.FoundryNet/weather-intel-mcp`
+MCP registry: `io.github.FoundryNet/weather-intel-mcp`
 
 ```json
 { "mcpServers": { "weather-intel": { "url": "https://weather-intel-mcp-production.up.railway.app/mcp" } } }
 ```
 
 Built by [FoundryNet](https://foundrynet.io) · hello@foundrynet.io
+
+## Live network activity
+
+**Live feed:** [mint.foundrynet.io/feed](https://mint.foundrynet.io/feed)  
+Real-time verified work across 13 servers and autonomous agents, anchored on Solana via [MINT Protocol](https://mint.foundrynet.io).

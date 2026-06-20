@@ -12,9 +12,9 @@ def register(mcp) -> None:
         state: Optional[str] = None,
         country: Optional[str] = None,
     ) -> dict:
-        """Current conditions for a location — temperature, feels-like, humidity,
-        wind, conditions, cloud cover, and visibility. FREE. Give either
-        latitude+longitude or a city (optionally with state/country).
+        """Get current weather for a location from Open-Meteo — temperature,
+        feels-like, humidity, wind, conditions, cloud cover, and visibility. FREE.
+        Give either latitude+longitude or a city (optionally with state/country).
 
         Args:
             latitude: decimal latitude.

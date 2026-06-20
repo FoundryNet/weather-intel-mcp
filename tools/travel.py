@@ -15,9 +15,10 @@ def register(mcp) -> None:
         agent_id: Optional[str] = None,
         payment_tx: Optional[str] = None,
     ) -> dict:
-        """Weather comparison between two locations for trip planning — origin vs.
-        destination forecast, the temp/precip deltas, active destination advisories,
-        and structured packing recommendations (not prose).
+        """Compare weather between two locations for trip planning, using Open-Meteo
+        forecast and NWS alerts — origin vs. destination forecast, temp/precip
+        deltas, active destination advisories, and structured packing
+        recommendations (not prose).
 
         PAID: $0.01 USDC per query after the daily free allowance (50/day). On a
         402, pay the returned Solana memo and re-call with the SAME args plus
