@@ -1,11 +1,35 @@
-name: "@foundrynet/weather-intel"
-displayName: "Weather & Climate Intelligence MCP"
+name: "@foundrynet/weather-intel-mcp"
+displayName: "FoundryNet Weather Intelligence"
 description: >-
-  Weather and climate intelligence for AI agents — current weather, forecast API,
-  historical weather, climate data and normals, severe-weather alerts, agricultural
-  weather, and travel weather. Free current conditions and alerts; sub-cent
-  forecasts. Keyless sources (Open-Meteo + NWS). Part of the FoundryNet Data
-  Network. Free tier then x402 (USDC on Solana).
+  Weather forecasts, historical climate data, severe alerts, agricultural outlook, and travel condition comparison from NOAA and NWS.
+icon: "🌤️"
+homepage: "https://foundrynet.io"
+repository: "https://github.com/FoundryNet/weather-intel-mcp"
+license: "MIT"
+categories:
+  - data
+  - weather
+tags:
+  - weather-forecast
+  - climate-data
+  - noaa
+  - weather-alerts
+  - historical-weather
+  - agricultural-weather
+keywords:
+  - weather-forecast
+  - climate-data
+  - noaa
+  - weather-alerts
+  - historical-weather
+  - agricultural-weather
+attestation:
+  protocol: "MINT Protocol"
+  verified_outputs: true
+  live_feed: "https://mint.foundrynet.io/feed"
+network:
+  name: "FoundryNet Data Network"
+  servers: 17
 startCommand:
   type: http
   url: "https://weather-intel-mcp-production.up.railway.app/mcp"
