@@ -55,7 +55,7 @@ ALERT_REFRESH_MIN = int(_env("ALERT_REFRESH_MIN", "60"))
 
 # ── x402 per-tool pricing ────────────────────────────────────────────────────
 X402_ENABLED      = _flag("X402_ENABLED", True)
-SOLANA_WALLET     = _env("SOLANA_WALLET", "wUumjWWvtFEr69qkTw3wHNVQVxLA8DTyJSyVgGmLThd")
+SOLANA_WALLET     = _env("SOLANA_WALLET", "wUumjWJjfn27VQhTXd1jUNTzszCmsErkzaEeHWbLThd")
 PAYMENT_RECIPIENT = _env("PAYMENT_RECIPIENT", SOLANA_WALLET).strip()
 PAYMENT_VERIFY_RPC = _env("PAYMENT_VERIFY_RPC", "https://api.mainnet-beta.solana.com").rstrip("/")
 PAYMENT_USDC_MINT  = _env("PAYMENT_USDC_MINT", "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v").strip()
@@ -68,7 +68,16 @@ PRICE_HISTORICAL  = float(_env("PRICE_HISTORICAL", "0.01"))
 PRICE_NORMALS     = float(_env("PRICE_NORMALS", "0.01"))
 PRICE_AGRICULTURAL = float(_env("PRICE_AGRICULTURAL", "0.01"))
 PRICE_TRAVEL      = float(_env("PRICE_TRAVEL", "0.01"))
+PRICE_SUPPLY_CHAIN = float(_env("PRICE_SUPPLY_CHAIN", "0.02"))  # supply-chain route risk score
 PRICE_DAILY_BRIEF = float(_env("PRICE_DAILY_BRIEF", "5"))
+PRICE_BRIEF_SUMMARY = float(_env("PRICE_BRIEF_SUMMARY", "0.5"))  # $0.50 sample tier
+
+# ── Stripe rail (parallel payment option to x402, for the daily brief) ────────
+# Agents without a USDC wallet pay this hosted Payment Link instead. The secret
+# key verifies the resulting Checkout Session; the link URL is shown on a 402.
+STRIPE_SECRET_KEY       = _env("STRIPE_SECRET_KEY", "")
+STRIPE_LINK_DAILY_BRIEF = _env("STRIPE_LINK_DAILY_BRIEF",
+                               "https://buy.stripe.com/5kQeVdg6sddB2yGfC724000")
 
 # ── Daily curated brief ──────────────────────────────────────────────────────
 BRIEF_HOUR_UTC = int(_env("BRIEF_HOUR_UTC", "5"))   # curator runs at 05:00 UTC

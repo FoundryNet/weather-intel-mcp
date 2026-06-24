@@ -1,10 +1,10 @@
 {
-  "name": "Weather & Climate Intelligence MCP",
-  "description": "Weather & climate intelligence for agents: current weather, forecast, historical weather, climate normals, severe-weather alerts, agricultural weather, and travel weather. Keyless (Open-Meteo + NWS). Part of the FoundryNet Data Network.",
+  "name": "Supply Chain Weather Risk Scorer",
+  "description": "Supply chain weather risk scoring and transport condition assessment — score shipping routes, flag threats, and get shipment recommendations. Also raw NOAA forecasts, severe-weather alerts, historical weather, climate normals, agricultural and travel weather. Keyless (Open-Meteo + NWS). Part of the FoundryNet Data Network.",
   "url": "https://github.com/FoundryNet/weather-intel-mcp",
   "capabilities": [
-    "weather_data", "forecast", "climate_data", "historical_weather",
-    "weather_alerts", "agricultural_weather", "travel_weather"
+    "supply_chain_risk", "route_risk_scoring", "weather_data", "forecast", "climate_data",
+    "historical_weather", "weather_alerts", "agricultural_weather", "travel_weather"
   ],
   "network": "FoundryNet Data Network",
   "see_also": {
@@ -15,7 +15,7 @@
   },
   "mint_protocol": "https://mint-mcp-production.up.railway.app/mcp",
   "protocols": {
-    "mcp": { "endpoint": "https://weather-intel-mcp-production.up.railway.app/mcp", "transport": "streamable-http", "tools_count": 8 },
+    "mcp": { "endpoint": "https://weather-intel-mcp-production.up.railway.app/mcp", "transport": "streamable-http", "tools_count": 10 },
     "x402": { "supported": true, "currency": "USDC", "network": "solana" }
   },
   "contact": "hello@foundrynet.io"

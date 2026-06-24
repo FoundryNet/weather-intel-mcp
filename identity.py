@@ -57,3 +57,16 @@ def bearer(request=None) -> Optional[str]:
         return a[7:].strip() if a.lower().startswith("bearer ") else None
     except Exception:  # noqa: BLE001
         return None
+
+
+def stripe_token(request=None) -> Optional[str]:
+    """The Stripe Checkout Session id (cs_…) a caller may present via the
+    X-Stripe-Token header, as an alternative to the stripe_token tool argument."""
+    req = request or _request()
+    if not req:
+        return None
+    try:
+        v = req.headers.get("x-stripe-token", "")
+        return v.strip() or None
+    except Exception:  # noqa: BLE001
+        return None

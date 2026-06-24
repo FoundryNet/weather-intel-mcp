@@ -1,7 +1,7 @@
 name: "@foundrynet/weather-intel-mcp"
-displayName: "FoundryNet Weather Intelligence"
+displayName: "FoundryNet Supply Chain Weather Risk Scorer"
 description: >-
-  Weather forecasts, historical climate data, severe alerts, agricultural outlook, and travel condition comparison from NOAA and NWS.
+  Supply chain weather risk scoring and transport condition assessment — score shipping routes, flag threats, and get shipment recommendations. Also provides raw NOAA forecasts, alerts, and climate data.
 icon: "🌤️"
 homepage: "https://foundrynet.io"
 repository: "https://github.com/FoundryNet/weather-intel-mcp"
@@ -10,6 +10,11 @@ categories:
   - data
   - weather
 tags:
+  - supply-chain
+  - logistics
+  - shipping-risk
+  - transport-weather
+  - route-risk
   - weather-forecast
   - climate-data
   - noaa
@@ -17,6 +22,11 @@ tags:
   - historical-weather
   - agricultural-weather
 keywords:
+  - supply-chain
+  - logistics
+  - shipping-risk
+  - transport-weather
+  - route-risk
   - weather-forecast
   - climate-data
   - noaa

@@ -17,11 +17,14 @@ from . import normals as normals_tool
 from . import alerts as alerts_tool
 from . import agricultural as agricultural_tool
 from . import travel as travel_tool
+from . import supply_chain as supply_chain_tool
 from . import daily_brief as daily_brief_tool
+from . import brief_summary as brief_summary_tool
 from . import mint as mint_tool
 
 
 def register_all(mcp) -> None:
     for m in (current_tool, forecast_tool, historical_tool, normals_tool, alerts_tool,
-              agricultural_tool, travel_tool, daily_brief_tool, mint_tool):
+              agricultural_tool, travel_tool, supply_chain_tool, daily_brief_tool,
+              brief_summary_tool, mint_tool):
         m.register(mcp)

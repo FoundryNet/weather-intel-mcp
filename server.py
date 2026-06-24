@@ -24,6 +24,7 @@ import core
 import daily_curator
 import identity
 import payment_gate
+import x402_standard
 import supa
 import tools
 import weather_aggregator as agg
@@ -51,8 +52,8 @@ async def health(request: Request) -> JSONResponse:
         "status": "ok", "service": "weather-intel-mcp", "transport": "streamable-http",
         "network": "FoundryNet Data Network",
         "tools": ["current_weather", "forecast", "historical_weather", "climate_normals",
-                  "weather_alerts", "agricultural_outlook", "travel_conditions", "daily_brief",
-                  "mint_info"],
+                  "weather_alerts", "agricultural_outlook", "travel_conditions",
+                  "supply_chain_risk", "daily_brief", "mint_info"],
         "cache": "supabase:weather_cache" if supa.configured() else "unconfigured",
         "sources": "open-meteo + nws (keyless)",
         "noaa_cdo": "set" if config.NOAA_CDO_TOKEN else "unset (normals derived from open-meteo)",
@@ -150,6 +151,15 @@ async def rest_travel(request: Request) -> JSONResponse:
                                       api_key=identity.bearer(request)))
 
 
+@mcp.custom_route("/v1/supply-chain-risk", methods=["POST"])
+async def rest_supply_chain(request: Request) -> JSONResponse:
+    b = await _body(request)
+    return _resp(await core.do_supply_chain_risk(
+        b.get("origin"), b.get("destination"), b.get("ship_date"),
+        agent_key=_akey(request, b), payment_tx=b.get("payment_tx"),
+        api_key=identity.bearer(request)))
+
+
 @mcp.custom_route("/v1/mint-info", methods=["GET", "POST"])
 async def rest_mint(request: Request) -> JSONResponse:
     return JSONResponse(core.mint_info())
@@ -166,29 +176,33 @@ async def admin_refresh(request: Request) -> JSONResponse:
 
 
 # ── Discovery ────────────────────────────────────────────────────────────────
-_TAGLINE = "Weather, forecast, climate & alerts for agents — free current weather + alerts."
-_DESC = ("Weather & climate intelligence for agents: current weather, forecast API, historical "
-         "weather, climate data/normals, severe-weather alerts, agricultural weather, and travel "
-         "weather. Free current conditions + alerts. Part of the FoundryNet Data Network — attest "
-         "analysis with MINT Protocol; see also gov-contracts, brand-intel, patent-intel, financial-signals.")
-_KEYWORDS = ["weather data", "forecast API", "climate data", "historical weather",
+_TAGLINE = "Supply-chain weather risk scoring + raw NOAA forecasts & alerts for agents."
+_DESC = ("Supply chain weather risk scoring and transport condition assessment. Score routes, "
+         "flag threats, and get shipment recommendations (supply_chain_risk). Also provides raw "
+         "NOAA forecasts, severe-weather alerts, historical weather, climate normals, agricultural "
+         "weather, and travel comparison. Free current conditions + alerts. Part of the FoundryNet "
+         "Data Network — attest analysis with MINT Protocol; see also gov-contracts, brand-intel, "
+         "patent-intel, financial-signals.")
+_KEYWORDS = ["supply-chain", "logistics", "shipping-risk", "transport-weather", "route-risk",
+             "weather data", "forecast API", "climate data", "historical weather",
              "weather alerts", "agricultural weather", "travel weather"]
 
 _AGENT_CARD = {
-    "name": "Weather & Climate Intelligence MCP",
-    "description": ("Get weather forecasts, severe-weather alerts, historical climate, and "
-                    "agricultural signals — keyless, from NOAA/NWS and Open-Meteo."),
+    "name": "Supply Chain Weather Risk Scorer",
+    "description": ("Score supply-chain / shipping routes for weather risk (0-100) with specific "
+                    "threats and shipment recommendations. Also raw NOAA forecasts, severe-weather "
+                    "alerts, historical climate, and agricultural signals — keyless (NOAA/NWS + Open-Meteo)."),
     "url": "https://weather-intel-mcp-production.up.railway.app/mcp",
     "version": "1.0.0",
     "capabilities": {"tools": ["current_weather", "forecast", "historical_weather",
                                "climate_normals", "weather_alerts", "agricultural_outlook",
-                               "travel_conditions", "daily_brief", "mint_info"]},
+                               "travel_conditions", "supply_chain_risk", "daily_brief", "mint_info"]},
     "provider": {"name": "FoundryNet", "url": "https://foundrynet.io"},
     "network": "FoundryNet Data Network",
     "attestation": {"protocol": "MINT Protocol",
                     "endpoint": "https://mint-mcp-production.up.railway.app/mcp",
                     "verified_outputs": True, "live_feed": "https://mint.foundrynet.io/feed", "feed_api": "https://mint-mcp-production.up.railway.app/v1/feed"},
-    "protocols": {"mcp": {"endpoint": config.PUBLIC_MCP_URL, "transport": "streamable-http", "tools_count": 9},
+    "protocols": {"mcp": {"endpoint": config.PUBLIC_MCP_URL, "transport": "streamable-http", "tools_count": 10},
                   "x402": {"supported": True, "currency": "USDC", "network": "solana"}},
     "see_also": config.SISTER_SERVERS, "mint_protocol": config.MINT_MCP_URL,
     "contact": "hello@foundrynet.io",
@@ -280,6 +294,47 @@ async def wellknown_mcp_json(request: Request) -> JSONResponse:
         "network": {"name": "FoundryNet Data Network", "servers": 17,
                     "homepage": "https://foundrynet.io"},
     }, headers={"Cache-Control": "public, max-age=300"})
+
+
+
+# ── Standard x402 compliance (discoverable on x402scan / 402 Index / CDP Bazaar) ──
+@mcp.custom_route("/x402", methods=["GET"])
+async def x402_index(request: Request) -> JSONResponse:
+    return JSONResponse(x402_standard.index(),
+                        headers={"Cache-Control": "public, max-age=300",
+                                 "Access-Control-Allow-Origin": "*"})
+
+
+@mcp.custom_route("/.well-known/x402", methods=["GET"])
+async def x402_wellknown(request: Request) -> JSONResponse:
+    return JSONResponse(x402_standard.index(),
+                        headers={"Cache-Control": "public, max-age=300",
+                                 "Access-Control-Allow-Origin": "*"})
+
+
+@mcp.custom_route("/x402/{tool}", methods=["GET", "POST"])
+async def x402_resource(request: Request) -> JSONResponse:
+    tool = request.path_params["tool"]
+    if tool not in x402_standard.PAID_TOOLS:
+        return JSONResponse({"error": "unknown_resource", "tool": tool,
+                             "available": list(x402_standard.PAID_TOOLS)}, status_code=404)
+    challenge = x402_standard.payment_required_header(tool)
+    return JSONResponse(x402_standard.payment_required(tool), status_code=402,
+                        headers={"Cache-Control": "public, max-age=300",
+                                 "Access-Control-Allow-Origin": "*",
+                                 "PAYMENT-REQUIRED": challenge,
+                                 "X-PAYMENT": challenge,
+                                 "Link": '</openapi.json>; rel="describedby"',
+                                 "WWW-Authenticate": 'x402 version="2"'})
+
+
+@mcp.custom_route("/openapi.json", methods=["GET"])
+async def openapi_doc(request: Request) -> JSONResponse:
+    """OpenAPI 3.1 discovery doc — x402scan requires a spec at a discoverable URL."""
+    return JSONResponse(x402_standard.openapi(),
+                        headers={"Cache-Control": "public, max-age=300",
+                                 "Access-Control-Allow-Origin": "*",
+                                 "Link": '</openapi.json>; rel="describedby"'})
 
 
 def build_dual_app():

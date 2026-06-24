@@ -15,6 +15,7 @@ import config
 import daily_curator
 import mint_integration
 import payment_gate
+import stripe_gate
 import supa
 import weather_sources as ws
 
@@ -235,12 +236,31 @@ def _packing(dd):
 
 
 # ── daily_brief (premium, curated) ────────────────────────────────────────────
-async def do_daily_brief(date, *, agent_key, payment_tx=None, api_key=None) -> dict:
+async def do_daily_brief(date, *, agent_key, payment_tx=None, api_key=None,
+                         stripe_token=None) -> dict:
     day = (date or datetime.now(timezone.utc).strftime("%Y-%m-%d")).strip()
+
+    # Stripe rail (parallel to x402): a paid Checkout Session unlocks the brief.
+    stripe_err = None
+    if stripe_token and stripe_gate.is_active():
+        sv = await stripe_gate.verify_session(stripe_token, config.PRICE_DAILY_BRIEF,
+                                              tool="daily_brief", agent_key=agent_key)
+        if sv["ok"]:
+            brief = await daily_curator.get_brief(day)
+            if not brief:
+                return {"error": "not_available",
+                        "detail": f"No brief for {day} (not yet generated, or expired at "
+                                  f"midnight UTC). Curated daily at {config.BRIEF_HOUR_UTC:02d}:00 UTC.",
+                        "billing": "stripe"}
+            await daily_curator.bump_purchase(day)
+            return {**brief, "billing": "stripe", "stripe_session": sv["session"]}
+        stripe_err = sv.get("detail")  # surface on the 402 below
+
     dec = await payment_gate.precheck("daily_brief", {"date": day}, config.PRICE_DAILY_BRIEF,
                                       agent_key, payment_tx, api_key)
     if dec["gate"] == "blocked":
-        return dec["body"]
+        return stripe_gate.augment_402(dec["body"], config.PRICE_DAILY_BRIEF,
+                                       stripe_error=stripe_err)
     brief = await daily_curator.get_brief(day)
     if not brief:
         return {"error": "not_available",
@@ -249,6 +269,136 @@ async def do_daily_brief(date, *, agent_key, payment_tx=None, api_key=None) -> d
                 "billing": _billing(dec)}
     await daily_curator.bump_purchase(day)
     return {**brief, "billing": _billing(dec)}
+
+
+# ── supply_chain_risk (PAID $0.02) ────────────────────────────────────────────
+def _parse_latlon(s):
+    """Accept a 'lat,lon' string; return (lat, lon) or None."""
+    if not isinstance(s, str) or "," not in s:
+        return None
+    try:
+        a, b = s.split(",", 1)
+        lat, lon = float(a.strip()), float(b.strip())
+        if -90 <= lat <= 90 and -180 <= lon <= 180:
+            return lat, lon
+    except (TypeError, ValueError):
+        pass
+    return None
+
+
+async def _resolve_point(place):
+    """Resolve a free-form place string (city, "City, ST", or 'lat,lon') to a
+    coordinate dict. Open-Meteo geocoding wants the city name alone, so a trailing
+    ", ST"/", Country" is split off and used to disambiguate."""
+    if not isinstance(place, str):
+        return None
+    ll = _parse_latlon(place)
+    if ll:
+        return {"latitude": ll[0], "longitude": ll[1], "name": None}
+    city, state, country = place.strip(), None, None
+    if "," in place:
+        parts = [p.strip() for p in place.split(",") if p.strip()]
+        if parts:
+            city = parts[0]
+            if len(parts) >= 2:
+                state = parts[1]
+            if len(parts) >= 3:
+                country = parts[2]
+    loc = await ws.resolve_location(None, None, city, state, country)
+    if not loc and (state or country):  # retry on the bare city
+        loc = await ws.resolve_location(None, None, city, None, None)
+    return loc
+
+
+async def do_supply_chain_risk(origin, destination, ship_date=None, *,
+                               agent_key, payment_tx=None, api_key=None) -> dict:
+    if not origin or not destination:
+        return {"error": "bad_request", "detail": "origin and destination are required"}
+    dec = await payment_gate.precheck("supply_chain_risk",
+                                      {"o": origin, "d": destination, "s": ship_date},
+                                      config.PRICE_SUPPLY_CHAIN, agent_key, payment_tx, api_key)
+    if dec["gate"] == "blocked":
+        return dec["body"]
+
+    o_loc = await _resolve_point(origin)
+    d_loc = await _resolve_point(destination)
+    if not o_loc:
+        return {"error": "not_found", "detail": f"Could not resolve origin: {origin}",
+                "billing": _billing(dec)}
+    if not d_loc:
+        return {"error": "not_found", "detail": f"Could not resolve destination: {destination}",
+                "billing": _billing(dec)}
+    o_lat, o_lon = _round(o_loc["latitude"]), _round(o_loc["longitude"])
+    d_lat, d_lon = _round(d_loc["latitude"]), _round(d_loc["longitude"])
+
+    o_wx = await _cached(_key("current", {"lat": o_lat, "lon": o_lon}), "current", o_lat, o_lon,
+                         config.TTL_CURRENT, lambda: ws.current(o_lat, o_lon))
+    d_wx = await _cached(_key("current", {"lat": d_lat, "lon": d_lon}), "current", d_lat, d_lon,
+                         config.TTL_CURRENT, lambda: ws.current(d_lat, d_lon))
+    o_alerts = await ws.nws_alerts(lat=o_lat, lon=o_lon)
+    d_alerts = await ws.nws_alerts(lat=d_lat, lon=d_lon)
+
+    risk_score = 0
+    threats: list = []
+
+    # Score active NWS alerts at either endpoint.
+    for leg, alerts in (("origin", o_alerts or []), ("destination", d_alerts or [])):
+        for a in alerts:
+            sev = str(a.get("severity") or "").lower()
+            event = str(a.get("event") or "")
+            etxt = event.lower()
+            if "extreme" in sev or "severe" in sev or "warning" in etxt:
+                risk_score += 30
+                threats.append({"leg": leg, "location": a.get("area_desc"),
+                                "threat": event or "severe alert", "severity": a.get("severity")})
+            elif "moderate" in sev or "watch" in etxt or "advisory" in etxt:
+                risk_score += 15
+                threats.append({"leg": leg, "location": a.get("area_desc"),
+                                "threat": event or "weather advisory", "severity": a.get("severity")})
+
+    # Score current conditions at either endpoint.
+    for leg, wx, loc in (("origin", o_wx, o_loc), ("destination", d_wx, d_loc)):
+        if not isinstance(wx, dict) or "error" in wx:
+            continue
+        temp = wx.get("temp_f")
+        wind = wx.get("wind_gust_mph") or wx.get("wind_mph") or 0
+        if temp is not None and (temp > 100 or temp < 10):
+            risk_score += 15
+            threats.append({"leg": leg, "location": loc.get("name"),
+                            "threat": f"Extreme temperature: {temp}°F"})
+        if wind and wind > 40:
+            risk_score += 20
+            threats.append({"leg": leg, "location": loc.get("name"),
+                            "threat": f"High wind: {wind} mph"})
+
+    risk_score = min(risk_score, 100)
+    level = ("critical" if risk_score > 70 else "elevated" if risk_score > 40
+             else "moderate" if risk_score > 20 else "low")
+    recommendation = (
+        "Delay shipment or use an alternative route" if risk_score > 70
+        else "Monitor conditions closely; prepare a contingency" if risk_score > 40
+        else "Normal operations with standard precautions" if risk_score > 20
+        else "Clear conditions for transport")
+
+    def _endpoint(place, loc, wx):
+        return {"input": place, "resolved": loc.get("name"),
+                "coordinates": {"lat": loc.get("latitude"), "lon": loc.get("longitude")},
+                "conditions": (wx if isinstance(wx, dict) and "error" not in wx else None)}
+
+    out = {
+        "risk_score": risk_score,
+        "risk_level": level,
+        "ship_date": ship_date,
+        "origin": _endpoint(origin, o_loc, o_wx),
+        "destination": _endpoint(destination, d_loc, d_wx),
+        "active_threats": threats,
+        "threat_count": len(threats),
+        "recommendation": recommendation,
+        "billing": _billing(dec),
+    }
+    out["provenance"] = await asyncio.to_thread(
+        mint_integration.attest_data, out, "analysis", "supply chain weather risk score")
+    return out
 
 
 # ── mint_info (FREE) ──────────────────────────────────────────────────────────
@@ -314,8 +464,11 @@ def _make_upsell(_fn):
             except Exception:  # noqa: BLE001
                 pass
             try:
-                import asyncio as _aio, mint_integration as _mint
-                result["foundrynet_network"] = await _aio.to_thread(_mint.network_heartbeat)
+                import asyncio as _aio, mint_integration as _mint, upsell_engine as _upsell_engine
+                _hb = await _aio.to_thread(_mint.network_heartbeat)
+                _av, _ct = await _brief_status_cached()
+                result["foundrynet_network"] = {**_hb, **_upsell_engine.get_upsell(
+                    brief_price=config.PRICE_DAILY_BRIEF, brief_signal_count=(_ct if _av else None))}
             except Exception:  # noqa: BLE001
                 pass
         return result
@@ -323,6 +476,50 @@ def _make_upsell(_fn):
     return _wrapped
 
 
-for _upsell_fn in ("do_forecast", "do_historical", "do_normals", "do_agricultural", "do_travel",):
+for _upsell_fn in ("do_forecast", "do_historical", "do_normals", "do_agricultural", "do_travel",
+                   "do_supply_chain_risk",):
     if _upsell_fn in globals():
         globals()[_upsell_fn] = _make_upsell(globals()[_upsell_fn])
+
+
+# ── brief_summary ($0.50): structured top-5 sample of today's brief (upsell) ──
+def _top_signals(brief: dict, n: int = 5) -> list:
+    """Flatten a brief's signals into a flat top-N list — structure-agnostic."""
+    sig = (brief or {}).get("signals")
+    items: list = []
+    if isinstance(sig, dict):
+        for cat, val in sig.items():
+            if isinstance(val, list):
+                for it in val:
+                    items.append({"category": cat, **(it if isinstance(it, dict) else {"value": it})})
+            elif isinstance(val, dict):
+                items.append({"category": cat, **val})
+            elif val not in (None, "", 0):
+                items.append({"category": cat, "value": val})
+    elif isinstance(sig, list):
+        items = sig
+    return items[:n]
+
+
+async def do_brief_summary(date, *, agent_key, payment_tx=None, api_key=None):
+    """Top-5 signals from today's brief as structured JSON (no prose) — the $0.50
+    sample that upsells the full daily_brief."""
+    from datetime import datetime, timezone
+    day = (date or datetime.now(timezone.utc).strftime("%Y-%m-%d")).strip()
+    dec = await payment_gate.precheck("brief_summary", {"date": day}, config.PRICE_BRIEF_SUMMARY,
+                                      agent_key, payment_tx, api_key)
+    if dec["gate"] == "blocked":
+        return dec["body"]
+    brief = await daily_curator.get_brief(day)
+    if not brief:
+        return {"error": "not_available",
+                "detail": f"No brief for {day} yet (curated daily; expires next midnight UTC).",
+                "billing": _billing(dec)}
+    return {
+        "date": day,
+        "top_signals": _top_signals(brief, 5),
+        "total_signals": brief.get("signal_count"),
+        "full_brief": {"tool": "daily_brief", "price_usd": config.PRICE_DAILY_BRIEF,
+                       "note": "Full brief returns all signals with complete detail + MINT attestation."},
+        "billing": _billing(dec),
+    }

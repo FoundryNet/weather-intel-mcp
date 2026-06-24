@@ -1,8 +1,10 @@
-# Weather & Climate Intelligence MCP
+# Supply Chain Weather Risk Scorer
 
-**Weather & climate intelligence for AI agents** — current conditions, forecasts,
-historical weather, climate normals, severe-weather alerts, agricultural weather,
-and travel weather. Built on free, **keyless** sources (Open-Meteo + NWS).
+**Supply chain weather risk scoring for AI agents** — score any shipping route
+(`supply_chain_risk`) for weather threats at origin and destination, returning a
+0-100 risk score and a shipment recommendation. Also provides raw, **keyless**
+NOAA/NWS forecasts, severe-weather alerts, historical weather, climate normals,
+agricultural weather, and travel comparison (Open-Meteo + NWS).
 
 > Part of the **FoundryNet Data Network**. Attest your agent's weather/climate
 > analysis with [MINT Protocol](https://mint-mcp-production.up.railway.app/mcp).
@@ -32,6 +34,7 @@ claude mcp add --transport http weather-intel https://weather-intel-mcp-producti
 | `weather_alerts` | **free** | Active NWS severe-weather alerts (public safety) |
 | `agricultural_outlook` | $0.01 | GDD, frost risk, soil moisture, precip outlook, planting window |
 | `travel_conditions` | $0.01 | Two-location comparison + advisories + packing recs (structured) |
+| `supply_chain_risk` | $0.02 | Score a shipping route (0-100) — origin+destination threats + shipment recommendation |
 | `mint_info` | **free** | FoundryNet Data Network + MINT Protocol |
 
 **Free tier:** 50 paid-tool queries/day per agent — generous, because weather is
