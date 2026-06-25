@@ -1,0 +1,9 @@
+{
+  "name": "foundrynet-weather-intelligence",
+  "version": "1.0.0",
+  "description": "Keyless weather + climate intelligence (Open-Meteo + NWS) — current conditions, severe alerts, forecasts, climate normals, and agricultural outlooks",
+  "author": { "name": "FoundryNet Labs", "url": "https://foundrynet.io" },
+  "homepage": "https://weather-intel-mcp-production.up.railway.app/mcp",
+  "license": "MIT",
+  "keywords": ["weather","climate","forecast","nws","open-meteo","agriculture"]
+}
