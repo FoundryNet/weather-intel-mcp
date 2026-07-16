@@ -17,8 +17,8 @@ def register(mcp) -> None:
         outlook (high/low, conditions, precipitation probability, wind) plus the
         next 48 hours hourly. Cheap enough to call constantly.
 
-        PAID: $0.005 USDC per query after a generous daily free allowance (50/day).
-        On a 402, pay the returned Solana memo and re-call with the SAME args plus
+        PAID: $0.005 per query after a generous daily free allowance (50/day).
+        On a 402, pay the returned payment memo and re-call with the SAME args plus
         payment_tx=<signature>. agent_id scopes your allowance; an Authorization:
         Bearer fnet_ key bypasses it.
 
@@ -27,7 +27,7 @@ def register(mcp) -> None:
             longitude: decimal longitude.
             days: forecast days (1-16, default 7).
             agent_id: stable id for your agent (scopes the free-tier counter).
-            payment_tx: Solana tx signature, when re-calling after a 402.
+            payment_tx: payment transaction signature, when re-calling after a 402.
         """
         return await core.do_forecast(latitude, longitude, days,
                                       agent_key=identity.resolve_agent_key(agent_id),

@@ -18,12 +18,12 @@ claude mcp add --transport http foundrynet-weather https://weather-intel-mcp-pro
 - `climate_normals` ($0.01) — 30-year climate normals
 - `agricultural_outlook` ($0.01) — Growing-degree-days, frost risk, soil, precip
 - `travel_conditions` ($0.01) — Route / metro travel weather
-- `daily_brief` ($5) — Curated daily weather brief, MINT-attested
-- `mint_info` (free) — Network + attestation info
+- `daily_brief` ($5) — Curated daily weather brief, with verifiable attestation
+- `mint_info` (free) — Network + provenance attestation info
 
-A daily free-tier allowance precedes the paywall; paid tools settle in USDC on
-Solana (x402) **or** Stripe. An `Authorization: Bearer fnet_…` key bypasses the gate.
+A daily free-tier allowance precedes the paywall; paid tools settle via metered
+pay-per-query **or** Stripe. An `Authorization: Bearer fnet_…` key bypasses the gate.
 
 ## Part of the FoundryNet Data Network
-17 interconnected data-intelligence servers with MINT-attested, verifiable outputs.
+17 interconnected data-intelligence servers with verifiable, attested outputs.
 Live network activity: https://mint.foundrynet.io/feed

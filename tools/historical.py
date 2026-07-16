@@ -18,8 +18,8 @@ def register(mcp) -> None:
         archive — daily high/low/mean temperature, precipitation, and max wind per
         day (global climate data).
 
-        PAID: $0.01 USDC per query after the daily free allowance (50/day). On a
-        402, pay the returned Solana memo and re-call with the SAME args plus
+        PAID: $0.01 per query after the daily free allowance (50/day). On a
+        402, pay the returned payment memo and re-call with the SAME args plus
         payment_tx=<signature>. An Authorization: Bearer fnet_ key bypasses it.
 
         Args:
@@ -28,7 +28,7 @@ def register(mcp) -> None:
             date_from: ISO date "YYYY-MM-DD".
             date_to: ISO date "YYYY-MM-DD".
             agent_id: stable id for your agent (scopes the free-tier counter).
-            payment_tx: Solana tx signature, when re-calling after a 402.
+            payment_tx: payment transaction signature, when re-calling after a 402.
         """
         return await core.do_historical(latitude, longitude, date_from, date_to,
                                         agent_key=identity.resolve_agent_key(agent_id),

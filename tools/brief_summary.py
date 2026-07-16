@@ -15,14 +15,14 @@ def register(mcp) -> None:
         sample of the full daily_brief. Returns the day's highest-priority items
         (no prose) so an agent can decide whether to buy the full brief.
 
-        PAID: $0.50 USDC (vs the full daily_brief price). Defaults to today (UTC).
-        On a 402, pay the returned Solana memo and re-call with the SAME args plus
+        PAID: $0.50 (vs the full daily_brief price). Defaults to today (UTC).
+        On a 402, pay the returned payment memo and re-call with the SAME args plus
         payment_tx=<signature>. An Authorization: Bearer fnet_ key bypasses payment.
 
         Args:
             date: brief date YYYY-MM-DD (default today, UTC).
             agent_id: stable id for your agent (scopes the free-tier counter).
-            payment_tx: Solana tx signature, when re-calling after a 402.
+            payment_tx: payment transaction signature, when re-calling after a 402.
         """
         return await core.do_brief_summary(
             date, agent_key=identity.resolve_agent_key(agent_id),

@@ -5,7 +5,7 @@ a TTL cache. current_weather + weather_alerts are free (loss leaders / public
 safety → maximum discovery); forecast is sub-cent; the rest are 1¢. A background
 task refreshes the nationwide alert snapshot hourly and warms climate normals daily.
 
-8 tools + free mint_info. Free tier 50/day, then x402 (USDC on Solana).
+8 tools + free mint_info. Free tier 50/day, then metered pay-per-query.
 Transport: Streamable HTTP at /mcp (+ legacy /sse). Health: /health.
 """
 from __future__ import annotations
@@ -70,7 +70,7 @@ async def health(request: Request) -> JSONResponse:
         "network": "FoundryNet Data Network",
         "tools": ["current_weather", "forecast", "historical_weather", "climate_normals",
                   "weather_alerts", "agricultural_outlook", "travel_conditions",
-                  "supply_chain_risk", "daily_brief", "mint_info"],
+                  "supply_chain_risk", "daily_brief", "brief_summary", "mint_info"],
         "cache": "supabase:weather_cache" if supa.configured() else "unconfigured",
         "sources": "open-meteo + nws (keyless)",
         "noaa_cdo": "set" if config.NOAA_CDO_TOKEN else "unset (normals derived from open-meteo)",
@@ -198,8 +198,8 @@ _DESC = ("Supply chain weather risk scoring and transport condition assessment. 
          "flag threats, and get shipment recommendations (supply_chain_risk). Also provides raw "
          "NOAA forecasts, severe-weather alerts, historical weather, climate normals, agricultural "
          "weather, and travel comparison. Free current conditions + alerts. Part of the FoundryNet "
-         "Data Network — attest analysis with MINT Protocol; see also gov-contracts, brand-intel, "
-         "patent-intel, financial-signals.")
+         "Data Network — every analysis carries verifiable provenance attestation; see also gov-contracts, "
+         "brand-intel, patent-intel, financial-signals.")
 _KEYWORDS = ["supply-chain", "logistics", "shipping-risk", "transport-weather", "route-risk",
              "weather data", "forecast API", "climate data", "historical weather",
              "weather alerts", "agricultural weather", "travel weather"]
@@ -213,16 +213,16 @@ _AGENT_CARD = {
     "version": "1.0.0",
     "capabilities": {"tools": ["current_weather", "forecast", "historical_weather",
                                "climate_normals", "weather_alerts", "agricultural_outlook",
-                               "travel_conditions", "supply_chain_risk", "daily_brief", "mint_info"]},
+                               "travel_conditions", "supply_chain_risk", "daily_brief",
+                               "brief_summary", "mint_info"]},
     "provider": {"name": "FoundryNet", "url": "https://foundrynet.io"},
     "network": "FoundryNet Data Network",
-    "attestation": {"protocol": "MINT Protocol",
-                    "endpoint": "https://mint-mcp-production.up.railway.app/mcp",
+    "attestation": {"protocol": "verifiable provenance",
                     "verified_outputs": True, "live_feed": "https://mint.foundrynet.io/feed", "feed_api": "https://mint-mcp-production.up.railway.app/v1/feed"},
-    "protocols": {"mcp": {"endpoint": config.PUBLIC_MCP_URL, "transport": "streamable-http", "tools_count": 10},
-                  "x402": {"supported": True, "currency": "USDC", "network": "solana"}},
-    "see_also": config.SISTER_SERVERS, "mint_protocol": config.MINT_MCP_URL,
-    "contact": "hello@foundrynet.io",
+    "protocols": {"mcp": {"endpoint": config.PUBLIC_MCP_URL, "transport": "streamable-http", "tools_count": 11},
+                  "x402": {"supported": True}},
+    "see_also": config.SISTER_SERVERS,
+    "contact": "forge@foundrynet.io",
 }
 
 
@@ -253,7 +253,7 @@ async def server_card(request: Request) -> JSONResponse:
         "serverInfo": {"name": "Weather & Climate Intelligence MCP", "version": "1.0.0"},
         "authentication": {"type": "http", "scheme": "bearer",
                            "description": ("current_weather, weather_alerts, and mint_info are free; other "
-                                           "tools give 50 free queries/day then take an fnet_ Bearer key OR x402 USDC.")},
+                                           "tools give 50 free queries/day then take an fnet_ Bearer key OR per-query payment.")},
         "tools": live, "version": "1.0", "name": "Weather & Climate Intelligence MCP",
         "tagline": _TAGLINE, "description": _DESC,
         "serverUrl": config.PUBLIC_MCP_URL, "transport": "streamable-http",
@@ -263,7 +263,7 @@ async def server_card(request: Request) -> JSONResponse:
         "see_also": config.SISTER_SERVERS,
         "pricing": {"model": "metered",
                     "free_tier": f"{config.FREE_TIER_DAILY} queries/day + free current_weather & weather_alerts",
-                    "paid_from": f"{config.PRICE_FORECAST} USDC per query (x402)"},
+                    "paid_from": f"${config.PRICE_FORECAST} per query"},
     }, headers={"Cache-Control": "public, max-age=300"})
 
 
@@ -306,7 +306,7 @@ async def wellknown_mcp_json(request: Request) -> JSONResponse:
         "tools": names,
         "pricing": {"model": "per-query", "free_tier": True,
                     "paid_tools": [n for n in names if n not in _FREE_TOOL_NAMES]},
-        "attestation": {"enabled": True, "protocol": "MINT Protocol",
+        "attestation": {"enabled": True, "protocol": "verifiable provenance",
                         "feed": "https://mint.foundrynet.io/feed"},
         "network": {"name": "FoundryNet Data Network", "servers": 17,
                     "homepage": "https://foundrynet.io"},

@@ -1,8 +1,8 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.FoundryNet/weather-intel-mcp",
-  "title": "Weather & Climate Intelligence MCP",
-  "description": "Get weather forecasts, severe-weather alerts, historical climate, and agricultural signals — keyless, from NOAA/NWS and Open-Meteo.",
+  "title": "Supply Chain Weather Risk & Climate Intelligence MCP",
+  "description": "Score shipping routes for weather risk (0-100) with origin/destination threats and shipment recommendations (supply_chain_risk). Plus free, keyless NOAA/NWS + Open-Meteo weather: current conditions, severe alerts, forecasts, historical climate, and agricultural signals.",
   "version": "1.0.0",
   "homepage": "https://foundrynet.io",
   "repository": {

@@ -20,8 +20,8 @@ def register(mcp) -> None:
         deltas, active destination advisories, and structured packing
         recommendations (not prose).
 
-        PAID: $0.01 USDC per query after the daily free allowance (50/day). On a
-        402, pay the returned Solana memo and re-call with the SAME args plus
+        PAID: $0.01 per query after the daily free allowance (50/day). On a
+        402, pay the returned payment memo and re-call with the SAME args plus
         payment_tx=<signature>. An Authorization: Bearer fnet_ key bypasses it.
 
         Args:
@@ -29,7 +29,7 @@ def register(mcp) -> None:
             dest_lat, dest_lon: destination coordinates.
             date: optional ISO date "YYYY-MM-DD" within the next 7 days (else today).
             agent_id: stable id for your agent (scopes the free-tier counter).
-            payment_tx: Solana tx signature, when re-calling after a 402.
+            payment_tx: payment transaction signature, when re-calling after a 402.
         """
         return await core.do_travel(origin_lat, origin_lon, dest_lat, dest_lon, date,
                                     agent_key=identity.resolve_agent_key(agent_id),

@@ -143,6 +143,12 @@ def augment_402(body: dict, price_usd: float, *, stripe_error: Optional[str] = N
     so existing x402-only clients keep working."""
     if not isinstance(body, dict):
         return body
+    # payment_gate already emits a unified payment_options (x402 + stripe + upsell);
+    # don't overwrite it. Only attach a stripe_error if asked.
+    if "payment_options" in body:
+        if stripe_error:
+            body["stripe_error"] = stripe_error
+        return body
     pr = body.get("payment_required") or {}
     options: dict = {}
     link = link_url()

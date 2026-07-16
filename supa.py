@@ -24,6 +24,13 @@ def _headers(extra: Optional[dict] = None) -> dict:
     h = {"apikey": config.SUPABASE_SERVICE_KEY,
          "Authorization": f"Bearer {config.SUPABASE_SERVICE_KEY}",
          "Content-Type": "application/json", "Accept": "application/json"}
+    # Shared-hub consolidation: when SUPABASE_SCHEMA != public, target this
+    # service's namespaced schema via PostgREST profile headers (Accept-Profile
+    # for reads, Content-Profile for writes/RPC). No table-name changes needed.
+    sch = getattr(config, "SUPABASE_SCHEMA", "public")
+    if sch and sch != "public":
+        h["Accept-Profile"] = sch
+        h["Content-Profile"] = sch
     if extra:
         h.update(extra)
     return h

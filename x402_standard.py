@@ -84,7 +84,7 @@ def payment_required(tool: str) -> dict:
                      "network": "FoundryNet Data Network", "servers": 17,
                      "homepage": "https://foundrynet.io",
                      "mcp_endpoint": config.PUBLIC_MCP_URL,
-                     "attestation": "MINT Protocol"},
+                     "attestation": "verifiable provenance"},
         "extensions": {},
     }
 
@@ -129,7 +129,7 @@ def openapi() -> dict:
     return {
         "openapi": "3.1.0",
         "info": {"title": SERVER_NAME, "description": SERVER_DESC, "version": "1.0.0",
-                 "contact": {"email": "foundrynet@proton.me"}},
+                 "contact": {"email": "forge@foundrynet.io"}},
         "servers": [{"url": _base_url()}],
         "paths": paths,
     }

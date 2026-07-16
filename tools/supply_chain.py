@@ -18,8 +18,8 @@ def register(mcp) -> None:
         current conditions and active NWS severe-weather alerts at both the origin
         and destination into a single transport-risk score.
 
-        PAID: $0.02 USDC per call after the daily free allowance (50/day). On a 402,
-        pay the returned Solana memo and re-call with the SAME args plus
+        PAID: $0.02 per call after the daily free allowance (50/day). On a 402,
+        pay the returned payment memo and re-call with the SAME args plus
         payment_tx=<signature>. An Authorization: Bearer fnet_ key bypasses it.
 
         Args:
@@ -27,7 +27,7 @@ def register(mcp) -> None:
             destination: destination city or "lat,lon".
             ship_date: optional planned ship date (YYYY-MM-DD), echoed in the result.
             agent_id: stable id for your agent (scopes the free-tier counter).
-            payment_tx: Solana tx signature, when re-calling after a 402.
+            payment_tx: payment transaction signature, when re-calling after a 402.
         """
         return await core.do_supply_chain_risk(
             origin, destination, ship_date,

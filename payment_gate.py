@@ -15,6 +15,7 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
+import os
 import re
 import time
 from typing import Optional
@@ -24,6 +25,19 @@ import supa
 from http_util import request_json
 
 logger = logging.getLogger("weather.pay")
+
+# ── fnet_ key allowlist (P0 hardening) ────────────────────────────────────────
+# Only allowlisted, sha256-hashed fnet_ Forge keys bypass the gate. Seeded from
+# Forge's forge_api_keys registry (operational keys only) via FNET_VALID_KEY_HASHES,
+# a comma-separated list of sha256(plaintext) hex digests. An empty/unset allowlist
+# means NO key bypasses (fail-closed) — env must be set before this code deploys.
+VALID_KEY_HASHES = frozenset(
+    h.strip() for h in os.environ.get("FNET_VALID_KEY_HASHES", "").split(",") if h.strip()
+)
+
+
+def _seconds_until_utc_midnight() -> int:
+    return int(86400 - (time.time() % 86400))
 
 _USDC_DECIMALS = 6
 _MEMO_PROGRAM_IDS = frozenset({
@@ -60,27 +74,75 @@ def intent_id(tool: str, params: dict, price_usdc: float) -> str:
 
 
 def payment_required_body(tool: str, intent: str, price_usdc: float,
-                          reason: Optional[str] = None) -> dict:
+                          reason: Optional[str] = None, *,
+                          used: Optional[int] = None,
+                          cap: Optional[int] = None) -> dict:
+    """402 body in conversion-priority order: (1) Stripe SUBSCRIPTION ($19/$49,
+    credit card, ~30s, unlimited) leads — developers hitting a paywall have cards,
+    not Solana wallets; (2) Stripe SINGLE (daily brief, one-time card); (3) x402 USDC
+    per-query for crypto-native agents; (4) the $0.50 brief_summary. Legacy
+    `payment_required`/`instructions` fields are kept so existing x402-only clients
+    and discovery crawlers still work."""
+    limit = cap if cap is not None else config.FREE_TIER_DAILY
+    server = getattr(config, "SERVER_SLUG", "this server")
+    n_servers = getattr(config, "NETWORK_SERVER_COUNT", 17)
+    pro_link = getattr(config, "STRIPE_LINK_PRO", "") or None
+    intel_link = getattr(config, "STRIPE_LINK_INTEL", "") or None
+    summary_price = float(getattr(config, "PRICE_BRIEF_SUMMARY", 0.5))
+
+    x402 = {
+        "amount": _fmt(price_usdc), "currency": "USDC", "network": "solana",
+        "recipient": config.PAYMENT_RECIPIENT, "memo": intent,
+        "expires_in": config.PAYMENT_EXPIRY_SECONDS, "usdc_mint": config.PAYMENT_USDC_MINT,
+        "amount_base_units": _base_units(price_usdc), "decimals": _USDC_DECIMALS,
+        "instructions": (
+            f"Send {_fmt(price_usdc)} USDC to {config.PAYMENT_RECIPIENT} on Solana "
+            f"with the SPL-memo '{intent}', then re-call {tool} with the SAME "
+            f"arguments plus payment_tx=<transaction signature>."),
+    }
+
     body = {
         "status": 402,
         "error": "payment_required",
+        "free_tier": {"used": used, "limit": limit,
+                      "resets_in": _seconds_until_utc_midnight()},
+        # 1) SUBSCRIPTION — the first path a developer sees.
+        "upgrade": {
+            "pro": ({
+                "price": "$19/month",
+                "includes": f"Unlimited queries across all {n_servers} FoundryNet servers",
+                "checkout_url": pro_link,
+            } if pro_link else None),
+            "intelligence": ({
+                "price": "$49/month",
+                "includes": "Unlimited queries + Knowledge Bases + composite products",
+                "checkout_url": intel_link,
+            } if intel_link else None),
+        },
+        # 2) Stripe single (card, one-time)  then  3) x402 USDC per-query.
+        "pay_per_query": {
+            "x402_usdc": x402,
+        },
+        # 4) cheapest sample.
+        "cheaper_option": ({
+            "tool": "brief_summary",
+            "price": f"${_fmt(summary_price)}",
+            "description": (f"Get today's top 5 {server} signals in one call for "
+                            f"${_fmt(summary_price)} instead of paying per query."),
+        } if tool != "brief_summary" else None),
+        # ── legacy fields (kept for x402-only clients + discovery crawlers) ──
         "payment_required": {
-            "amount": _fmt(price_usdc),
-            "currency": "USDC",
-            "network": "solana",
-            "recipient": config.PAYMENT_RECIPIENT,
-            "memo": intent,
-            "expires_in": config.PAYMENT_EXPIRY_SECONDS,
-            "usdc_mint": config.PAYMENT_USDC_MINT,
-            "amount_base_units": _base_units(price_usdc),
-            "decimals": _USDC_DECIMALS,
+            "amount": _fmt(price_usdc), "currency": "USDC", "network": "solana",
+            "recipient": config.PAYMENT_RECIPIENT, "memo": intent,
+            "expires_in": config.PAYMENT_EXPIRY_SECONDS, "usdc_mint": config.PAYMENT_USDC_MINT,
+            "amount_base_units": _base_units(price_usdc), "decimals": _USDC_DECIMALS,
         },
         "instructions": (
-            f"Daily free tier ({config.FREE_TIER_DAILY} queries) is spent. Send "
-            f"{_fmt(price_usdc)} USDC ({config.PAYMENT_USDC_MINT}) to "
-            f"{config.PAYMENT_RECIPIENT} on Solana with the SPL-memo set to "
-            f"'{intent}', then call {tool} again with the SAME arguments plus "
-            f"payment_tx=<transaction signature>."),
+            f"Daily free tier ({limit} queries) is spent. Fastest path: subscribe "
+            f"(${'19' if pro_link else ''}/$49 per month) for unlimited access by card. "
+            f"Or pay by card for the daily brief, pay {_fmt(price_usdc)} USDC for this "
+            f"query (memo '{intent}', re-call {tool} with payment_tx=<sig>), or take "
+            f"the ${_fmt(summary_price)} brief_summary."),
     }
     if reason:
         body["reason"] = reason
@@ -208,8 +270,43 @@ async def _reserve_payment(row: dict) -> bool:
     return True
 
 
-def _has_api_key(api_key: Optional[str]) -> bool:
-    return bool(api_key and api_key.strip())
+def _has_valid_api_key(api_key: Optional[str]) -> bool:
+    """True only for a real, allowlisted fnet_ Forge key. A non-empty bearer that
+    is NOT a valid fnet_ key returns False — the caller is then rejected (401),
+    not silently served, closing the 'any token bypasses' hole."""
+    if not api_key or not api_key.strip():
+        return False
+    api_key = api_key.strip()
+    if not api_key.startswith("fnet_"):
+        return False
+    return hashlib.sha256(api_key.encode("utf-8")).hexdigest() in VALID_KEY_HASHES
+
+
+async def _is_allowlisted(api_key: Optional[str]) -> bool:
+    """True if `api_key` is a valid fnet_ key — operator (static env) OR an active
+    subscriber key from the dynamic forge_api_keys allowlist (pro or intel; both
+    unlock unlimited queries here). The static set is checked first and also serves
+    as the fail-closed fallback when the registry is unreachable."""
+    if not api_key or not api_key.strip():
+        return False
+    api_key = api_key.strip()
+    if not api_key.startswith("fnet_"):
+        return False
+    h = hashlib.sha256(api_key.encode("utf-8")).hexdigest()
+    if h in VALID_KEY_HASHES:
+        return True
+    try:
+        import allowlist
+        return (await allowlist.tier_for(h)) is not None
+    except Exception:  # noqa: BLE001 — registry down → static set already failed-closed
+        return False
+
+
+
+def _invalid_key_body() -> dict:
+    return {"status": 401, "error": "invalid_api_key",
+            "detail": ("The Authorization bearer token is not a valid FoundryNet "
+                       "fnet_ key. Omit it to use the free tier, or pay via x402.")}
 
 
 async def precheck(tool: str, params: dict, price_usdc: float, agent_key: str,
@@ -218,26 +315,31 @@ async def precheck(tool: str, params: dict, price_usdc: float, agent_key: str,
     (blocked carries a 402 body)."""
     if not is_active():
         return {"gate": "open"}
-    if _has_api_key(api_key):
-        return {"gate": "api_key"}
+    # A presented bearer MUST be a valid allowlisted fnet_ key; anything else → 401.
+    if api_key and api_key.strip():
+        if await _is_allowlisted(api_key):
+            return {"gate": "api_key"}
+        return {"gate": "blocked", "status": 401, "body": _invalid_key_body()}
 
     claim = await _claim_free(agent_key)
     if claim.get("allowed"):
         return {"gate": "free", "count": claim.get("count"), "cap": claim.get("cap")}
 
+    used, cap = claim.get("count"), claim.get("cap")
     intent = intent_id(tool, params, price_usdc)
     payment_tx = (payment_tx or "").strip()
     if not payment_tx:
         return {"gate": "blocked", "status": 402,
-                "body": payment_required_body(tool, intent, price_usdc)}
+                "body": payment_required_body(tool, intent, price_usdc, used=used, cap=cap)}
     if await _tx_used(payment_tx):
         return {"gate": "blocked", "status": 402,
-                "body": payment_required_body(tool, intent, price_usdc,
+                "body": payment_required_body(tool, intent, price_usdc, used=used, cap=cap,
                     reason="This payment_tx was already used. Make a new payment.")}
     v = await verify_payment(payment_tx, intent, price_usdc)
     if not v["ok"]:
         return {"gate": "blocked", "status": 402,
-                "body": payment_required_body(tool, intent, price_usdc, reason=v["detail"])}
+                "body": payment_required_body(tool, intent, price_usdc, used=used, cap=cap,
+                    reason=v["detail"])}
     row = {"tx_signature": payment_tx, "intent": intent, "agent_key": agent_key,
            "tool": tool, "amount_usdc": v["amount_usdc"], "payer_wallet": v.get("payer"),
            "recipient": config.PAYMENT_RECIPIENT, "status": "settled",

@@ -8,7 +8,7 @@
   agricultural_outlook ($0.01)   GDD, frost risk, soil moisture, planting window
   travel_conditions    ($0.01)   two-location comparison + packing recs
   daily_brief          ($5)      curated daily brief — alerts, events, metro outlook, ag
-  mint_info            (free)    FoundryNet Data Network + MINT cross-promo
+  mint_info            (free)    FoundryNet Data Network + provenance attestation info
 """
 from . import current as current_tool
 from . import forecast as forecast_tool

@@ -17,15 +17,15 @@ def register(mcp) -> None:
         moisture + soil temperature, 7-day precipitation outlook, and a
         planting-window assessment.
 
-        PAID: $0.01 USDC per query after the daily free allowance (50/day). On a
-        402, pay the returned Solana memo and re-call with the SAME args plus
+        PAID: $0.01 per query after the daily free allowance (50/day). On a
+        402, pay the returned payment memo and re-call with the SAME args plus
         payment_tx=<signature>. An Authorization: Bearer fnet_ key bypasses it.
 
         Args:
             latitude: decimal latitude.
             longitude: decimal longitude.
             agent_id: stable id for your agent (scopes the free-tier counter).
-            payment_tx: Solana tx signature, when re-calling after a 402.
+            payment_tx: payment transaction signature, when re-calling after a 402.
         """
         return await core.do_agricultural(latitude, longitude,
                                           agent_key=identity.resolve_agent_key(agent_id),
