@@ -6,10 +6,9 @@
 NOAA/NWS forecasts, severe-weather alerts, historical weather, climate normals,
 agricultural weather, and travel comparison (Open-Meteo + NWS).
 
-> Part of the **FoundryNet Data Network**. Attest your agent's weather/climate
-> analysis with [MINT Protocol](https://mint-mcp-production.up.railway.app/mcp).
-> See also: **gov-contracts-mcp**, **brand-intel-mcp**, **patent-intel-mcp**,
-> **financial-signals-mcp**.
+> Part of the **FoundryNet Data Network**. Every analysis carries verifiable
+> provenance attestation. See also: **gov-contracts-mcp**, **brand-intel-mcp**,
+> **patent-intel-mcp**, **financial-signals-mcp**.
 
 ## Connect
 
@@ -35,12 +34,14 @@ claude mcp add --transport http weather-intel https://weather-intel-mcp-producti
 | `agricultural_outlook` | $0.01 | GDD, frost risk, soil moisture, precip outlook, planting window |
 | `travel_conditions` | $0.01 | Two-location comparison + advisories + packing recs (structured) |
 | `supply_chain_risk` | $0.02 | Score a shipping route (0-100) — origin+destination threats + shipment recommendation |
-| `mint_info` | **free** | FoundryNet Data Network + MINT Protocol |
+| `daily_brief` | $5 | Curated daily brief — alerts, events, metro outlook, agricultural signals |
+| `brief_summary` | $0.50 | Top 5 signals from today's brief as structured JSON — a cheap sample of `daily_brief` |
+| `mint_info` | **free** | FoundryNet Data Network + provenance attestation info |
 
 **Free tier:** 50 paid-tool queries/day per agent — generous, because weather is
 the highest-frequency query type and we want maximum adoption (plus unlimited free
-`current_weather` + `weather_alerts`). Then x402: the tool returns an HTTP-402 with
-a Solana USDC payment memo — pay it, re-call with the same args plus
+`current_weather` + `weather_alerts`). Then metered pay-per-query: the tool returns
+an HTTP-402 with a payment memo — pay it, re-call with the same args plus
 `payment_tx=<signature>`. An `Authorization: Bearer fnet_…` key bypasses the paywall.
 
 ## Sources
@@ -59,9 +60,9 @@ MCP registry: `io.github.FoundryNet/weather-intel-mcp`
 { "mcpServers": { "weather-intel": { "url": "https://weather-intel-mcp-production.up.railway.app/mcp" } } }
 ```
 
-Built by [FoundryNet](https://foundrynet.io) · hello@foundrynet.io
+Built by [FoundryNet](https://foundrynet.io?utm_source=github&utm_medium=readme&utm_campaign=weather-intel-mcp) · forge@foundrynet.io
 
 ## Live network activity
 
 **Live feed:** [mint.foundrynet.io/feed](https://mint.foundrynet.io/feed)  
-Real-time verified work across 21 servers and autonomous agents, anchored on Solana via [MINT Protocol](https://mint.foundrynet.io).
+Real-time verified work across 17 servers and autonomous agents in the FoundryNet Data Network.
